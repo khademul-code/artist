@@ -1,0 +1,143 @@
+import AppLayout from '@/layouts/app-layout';
+import { type BreadcrumbItem, Faq } from '@/types';
+import { Head, Link, useForm } from '@inertiajs/react';
+import { toast } from 'sonner';
+import {
+    Card,
+    CardContent,
+    CardFooter,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import InputError from '@/components/input-error';
+import { Button, buttonVariants } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { FormEventHandler } from 'react';
+import ReactQuill from 'react-quill-new';
+import 'react-quill-new/dist/quill.snow.css';
+
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+
+type EditFaqForm = {
+    question: string;
+    answer: string;
+    type: 'buyer' | 'supplier' | 'both';
+};
+
+interface Props {
+    faq: Faq;
+}
+
+export default function Edit({ faq }: Props) {
+    const breadcrumbs: BreadcrumbItem[] = [
+        {
+            title: 'FAQ Edit',
+            href: `/faq/${faq.id}/edit`,
+        },
+    ];
+
+    const { data, setData, errors, put, reset, processing } = useForm<EditFaqForm>({
+        question: faq.question || '',
+        answer: faq.answer || '',
+        type: faq.type || 'both',
+    });
+
+    const updateFaq: FormEventHandler = (e) => {
+        e.preventDefault();
+        put(route('faq.update', faq.id), {
+            preserveScroll: true,
+            onSuccess: () => {
+                toast.success('FAQ updated successfully!');
+            },
+            onError: () => {
+                toast.error('Failed to update FAQ.');
+            },
+        });
+    };
+
+    return (
+        <AppLayout breadcrumbs={breadcrumbs}>
+            <Head title="FAQ Edit" />
+            <div className="m-5 flex flex-col gap-5">
+                <div className="flex">
+                    <Link className={(buttonVariants({ variant: 'default', className: 'mb-2 ml-auto' }))} href={route('faq.index')}>
+                        FAQs List
+                    </Link>
+                </div>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Edit FAQ</CardTitle>
+                    </CardHeader>
+                    <form onSubmit={updateFaq}>
+                        <CardContent>
+                            <div className="grid w-full items-center gap-4">
+                                
+                                <div className="flex flex-col space-y-1.5">
+                                    <Label htmlFor="question">Question <span className="text-red-500">*</span></Label>
+                                    <Input
+                                        id="question"
+                                        value={data.question}
+                                        onChange={(e) => setData('question', e.target.value)}
+                                        placeholder="Enter the FAQ question"
+                                        disabled={processing}
+                                        required
+                                    />
+                                    <InputError message={errors.question} />
+                                </div>
+
+                                <div className="flex flex-col space-y-1.5">
+                                    <Label htmlFor="type">For Whom <span className="text-red-500">*</span></Label>
+                                    <Select
+                                        value={data.type}
+                                        onValueChange={(val: 'buyer' | 'supplier' | 'both') => setData('type', val)}
+                                        disabled={processing}
+                                    >
+                                        <SelectTrigger id="type">
+                                            <SelectValue placeholder="Select who this FAQ is for" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="both">Both (Buyer & Supplier)</SelectItem>
+                                            <SelectItem value="buyer">Buyer</SelectItem>
+                                            <SelectItem value="supplier">Supplier</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <InputError message={errors.type} />
+                                </div>
+
+                                <div className="flex flex-col space-y-1.5">
+                                    <Label htmlFor="answer">Answer <span className="text-red-500">*</span></Label>
+                                    <div className="bg-white rounded-md mt-2 pb-10">
+                                        <ReactQuill 
+                                            theme="snow" 
+                                            value={data.answer} 
+                                            onChange={(content) => setData('answer', content)} 
+                                            className="h-[300px]"
+                                            readOnly={processing}
+                                        />
+                                    </div>
+                                    <InputError message={errors.answer} />
+                                </div>
+                            </div>
+                        </CardContent>
+                        <CardFooter className="flex justify-between mt-5">
+                            <Button type="button" variant="outline" onClick={() => reset()} disabled={processing}>
+                                Reset
+                            </Button>
+                            <Button type="submit" disabled={processing}>
+                                Update
+                            </Button>
+                        </CardFooter>
+                    </form>
+                </Card>
+            </div>
+        </AppLayout>
+    );
+}
